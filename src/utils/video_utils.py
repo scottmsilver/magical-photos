@@ -165,3 +165,78 @@ def create_simple_loop(input_path: str, output_path: Optional[str] = None, num_l
         error_msg = e.stderr.decode() if e.stderr else str(e)
         logger.error(f"FFmpeg error: {error_msg}")
         raise RuntimeError(f"Failed to create looped video: {error_msg}") from e
+
+
+def convert_video_to_bw(
+    input_path: str,
+    output_path: Optional[str] = None,
+    method: str = "high_contrast",
+) -> str:
+    """
+    Convert video to black and white.
+
+    Args:
+        input_path: Path to input video
+        output_path: Path for output video (default: adds _bw suffix)
+        method: Conversion method (grayscale, high_contrast, vintage)
+
+    Returns:
+        Path to black and white video
+
+    Raises:
+        FileNotFoundError: If input video doesn't exist
+        RuntimeError: If ffmpeg processing fails
+    """
+    input_file = Path(input_path)
+    if not input_file.exists():
+        raise FileNotFoundError(f"Input video not found: {input_path}")
+
+    # Generate output path
+    if output_path is None:
+        output_path = str(input_file.parent / f"{input_file.stem}_bw{input_file.suffix}")
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    logger.info(f"Converting video to B&W ({method} method)...")
+
+    # Build filter based on method
+    if method == "grayscale":
+        vf_filter = "hue=s=0"
+    elif method == "high_contrast":
+        vf_filter = "hue=s=0,eq=contrast=1.2:brightness=0.05"
+    elif method == "vintage":
+        vf_filter = "hue=s=0,curves=vintage,eq=contrast=1.1"
+    else:
+        vf_filter = "hue=s=0"
+
+    try:
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i",
+            str(input_file),
+            "-vf",
+            vf_filter,
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "copy",
+            "-y",
+            str(output_file),
+        ]
+
+        logger.debug(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
+        subprocess.run(ffmpeg_cmd, capture_output=True, check=True)
+
+        logger.info(f"B&W video created: {output_path}")
+        return str(output_file)
+
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr.decode() if e.stderr else str(e)
+        logger.error(f"FFmpeg error: {error_msg}")
+        raise RuntimeError(f"Failed to convert video to B&W: {error_msg}") from e

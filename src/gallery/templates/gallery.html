@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🪄 Magical Portrait Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #2a2520;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+            min-height: 100vh;
+            padding: 60px 20px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 80px 60px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .portrait-frame {
+            position: relative;
+            background: linear-gradient(145deg, #3d342a, #2d2520);
+            padding: 25px;
+            box-shadow:
+                0 8px 16px rgba(0, 0, 0, 0.6),
+                inset 0 0 0 1px rgba(139, 115, 85, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.1);
+            border: 8px solid;
+            border-color: #8b7355 #6d5a42 #5a4833 #8b7355;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .portrait-frame.looking {
+            box-shadow:
+                0 12px 30px rgba(212, 175, 55, 0.4),
+                0 0 40px rgba(212, 175, 55, 0.3),
+                inset 0 0 0 1px rgba(212, 175, 55, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.1);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .portrait-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .portrait-frame:hover .portrait-controls {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .look-button {
+            padding: 10px 24px;
+            font-size: 0.95em;
+            font-family: 'Georgia', serif;
+            background: rgba(0, 0, 0, 0.85);
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .look-button:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #f0d060;
+            color: #f0d060;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .look-button.looking {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #f0d060;
+            color: #fff;
+        }
+
+        .empty-gallery {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 100px 20px;
+            color: #8b7355;
+        }
+
+        .empty-gallery h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .gallery {
+                grid-template-columns: 1fr;
+                gap: 50px;
+            }
+
+            .portrait-frame {
+                padding: 15px;
+                border-width: 6px;
+            }
+
+            .portrait-controls {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery">
+        {% if portraits %}
+            {% for portrait in portraits %}
+            <div class="portrait-frame" data-portrait="{{ portrait.base_name }}">
+                <div class="video-container">
+                    <video
+                        loop
+                        muted
+                        autoplay
+                        playsinline
+                        data-src="{{ url_for('serve_video', filename=portrait.filename) }}">
+                        <source src="{{ url_for('serve_video', filename=portrait.filename) }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div class="portrait-controls">
+                    <button class="look-button" onclick="toggleLooking('{{ portrait.base_name }}', this)">
+                        Look at Portrait
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-gallery">
+                <h2>No Portraits Yet</h2>
+                <p>Generate some magical portraits to see them here!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Track looking state for each portrait
+        const lookingState = new Map();
+
+        async function toggleLooking(portraitName, button) {
+            const isCurrentlyLooking = lookingState.get(portraitName) || false;
+            const newLookingState = !isCurrentlyLooking;
+
+            lookingState.set(portraitName, newLookingState);
+
+            // Update UI
+            const frame = document.querySelector(`[data-portrait="${portraitName}"]`);
+
+            if (newLookingState) {
+                frame.classList.add('looking');
+                button.classList.add('looking');
+                button.textContent = 'Watching...';
+            } else {
+                frame.classList.remove('looking');
+                button.classList.remove('looking');
+                button.textContent = 'Look at Portrait';
+            }
+
+            // Send to backend
+            try {
+                await fetch(`/api/portrait/${portraitName}/looking`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        is_looking: newLookingState,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+            } catch (error) {
+                console.error('Error notifying portrait:', error);
+            }
+        }
+
+        // Ensure videos are playing
+        document.addEventListener('DOMContentLoaded', () => {
+            const videos = document.querySelectorAll('video');
+            videos.forEach(video => {
+                video.play().catch(err => {
+                    console.log('Autoplay prevented:', err);
+                    // Add a play button overlay if autoplay fails
+                });
+            });
+        });
+
+        // Optional: Auto-stop looking after a timeout
+        function autoStopLooking(portraitName, timeoutSeconds = 30) {
+            setTimeout(() => {
+                if (lookingState.get(portraitName)) {
+                    const button = document.querySelector(
+                        `[data-portrait="${portraitName}"] .look-button`
+                    );
+                    if (button) {
+                        toggleLooking(portraitName, button);
+                    }
+                }
+            }, timeoutSeconds * 1000);
+        }
+    </script>
+</body>
+</html>

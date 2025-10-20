@@ -108,6 +108,7 @@ class Veo3Client:
         timeout: int = 300,
         poll_interval: int = 10,
         aspect_ratio_override: Optional[str] = None,
+        use_loop_frames: bool = False,
     ) -> str:
         """
         Generate video from image using Veo 3.
@@ -118,6 +119,8 @@ class Veo3Client:
             output_path: Optional path for output video (auto-generated if None)
             timeout: Maximum time to wait for generation (seconds)
             poll_interval: Time between status checks (seconds)
+            aspect_ratio_override: Override aspect ratio (e.g. "16:9", "9:16", "1:1")
+            use_loop_frames: Use same image as first and last frame for perfect looping
 
         Returns:
             Path to generated video file
@@ -129,9 +132,12 @@ class Veo3Client:
         # Validate image
         image_file = self.validate_image(image_path)
 
-        # Prepare output path
+        # Prepare output path with timestamp to avoid overwriting
         if output_path is None:
-            output_path = str(Path("output") / f"{image_file.stem}_animated.mp4")
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_path = str(Path("output") / f"{image_file.stem}_animated_{timestamp}.mp4")
         output_file = Path(output_path)
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -191,6 +197,14 @@ class Veo3Client:
             # Create reference image with proper type (as shown in API examples)
             reference_image = types.VideoGenerationReferenceImage(image=image, reference_type="asset")
 
+            # Prepare config parameters
+            config_params = {"reference_images": [reference_image], "aspect_ratio": aspect_ratio, "resolution": "720p"}
+
+            # Add last_frame for seamless looping if requested
+            if use_loop_frames:
+                logger.info("Using same image as first and last frame for perfect looping...")
+                config_params["last_frame"] = image
+
             # Retry logic for transient errors (502, 503, etc.)
             max_retries = 3
             retry_delay = 30  # Start with 30 seconds
@@ -205,9 +219,7 @@ class Veo3Client:
                     operation = self.client.models.generate_videos(
                         model=self.model_name,
                         prompt=prompt,
-                        config=types.GenerateVideosConfig(
-                            reference_images=[reference_image], aspect_ratio=aspect_ratio, resolution="720p"
-                        ),
+                        config=types.GenerateVideosConfig(**config_params),
                     )
                     logger.info(f"Video generation request successful on attempt {attempt + 1}")
                     break  # Success, exit retry loop
@@ -252,13 +264,17 @@ class Veo3Client:
 
             # Check for errors
             if operation.error:
-                raise VideoGenerationError(f"Generation failed: {operation.error}")
+                error_msg = str(operation.error)
+                logger.error(f"Operation error: {error_msg}")
+                raise VideoGenerationError(f"Generation failed: {error_msg}")
 
             if not operation.response:
+                logger.error("No response from generation operation")
                 raise VideoGenerationError("No response from generation operation")
 
             # Get generated video
             if not operation.response.generated_videos:
+                logger.error("No video in response - Veo may have failed silently")
                 raise VideoGenerationError("No video in response")
 
             video = operation.response.generated_videos[0]
@@ -275,7 +291,11 @@ class Veo3Client:
             logger.info(f"Video saved to: {output_path}")
             return str(output_file)
 
-        except VideoGenerationError:
+        except VideoGenerationError as e:
+            # Check if this is a retryable error (no video in response)
+            if "No video in response" in str(e) or "No response" in str(e):
+                logger.warning("Veo returned no video - this may be a transient issue")
+                logger.info("You may want to retry this request")
             raise
         except InvalidImageError:
             raise

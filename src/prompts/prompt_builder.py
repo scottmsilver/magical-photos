@@ -35,12 +35,10 @@ class PromptBuilder:
 
     # Base components for HP-style animations
     BASE_QUALITIES = [
-        "black and white photograph",
         "vintage wizarding portrait aesthetic",
-        "classic monochrome with rich contrast",
         "seamlessly looping animation",
-        "NO FRAMES, NO BORDERS, photograph only",
-        "maintains original photo composition",
+        "maintains original photo composition and colors",
+        "cinematic quality with rich detail",
     ]
 
     # Always include these - subject maintaining eye contact
@@ -58,6 +56,9 @@ class PromptBuilder:
         "shoulders shifting slightly",
         "chin lifting thoughtfully",
         "small amused expression",
+        "sly sideways glance at viewer",
+        "coy smile appearing briefly",
+        "eyes narrowing with mischief",
     ]
 
     MODERATE_MOVEMENTS = [
@@ -70,6 +71,9 @@ class PromptBuilder:
         "amused reaction to something off-camera",
         "finger to lips in conspiratorial gesture",
         "hand through hair casually",
+        "playful wink directed at viewer",
+        "secretive glance around before looking back",
+        "beckoning gesture to viewer",
     ]
 
     DRAMATIC_MOVEMENTS = [
@@ -81,6 +85,39 @@ class PromptBuilder:
         "surprised or delighted reactions",
         "theatrical magical gesture or flourish",
         "exaggerated wink or knowing look",
+        "breaking into sudden unexpected laughter",
+        "challenging stare directly at viewer",
+        "beckoning viewer closer conspiratorially",
+    ]
+
+    # Emotional expressions for more dynamic portraits
+    EMOTIONAL_EXPRESSIONS = [
+        "expression shifting from serious to amused",
+        "eyebrows raising in surprise or recognition",
+        "subtle frown forming then relaxing",
+        "corners of mouth twitching with suppressed smile",
+        "eyes widening with sudden interest",
+        "skeptical look crossing their face",
+        "flash of anger or annoyance in eyes",
+        "moment of thoughtful contemplation",
+        "recognition dawning across their features",
+        "trying to maintain composure but smiling through",
+    ]
+
+    # Furtive interactions with the viewer
+    VIEWER_INTERACTIONS = [
+        "sly knowing glance directly at camera",
+        "coy smile as if sharing a secret",
+        "quick furtive look around before making eye contact",
+        "conspiratorial lean toward viewer",
+        "subtle nod of acknowledgment to viewer",
+        "raising eyebrows meaningfully at camera",
+        "slight smirk directed at viewer",
+        "beckoning gesture inviting viewer closer",
+        "putting finger to lips as if shushing viewer",
+        "quick playful wink at camera",
+        "looking away then back with knowing expression",
+        "skeptical or challenging look at viewer",
     ]
 
     # Physical object interaction movements
@@ -116,9 +153,9 @@ class PromptBuilder:
     ENVIRONMENTAL_EFFECTS = [
         "subtle lighting shifts creating depth",
         "gentle movement in hair or fabric",
-        "atmospheric depth in monochrome tones",
-        "vintage photograph grain and character",
-        "classic black and white film aesthetic",
+        "atmospheric depth and natural shadows",
+        "vintage photograph character",
+        "classic portrait aesthetic",
     ]
 
     def __init__(self, duration: int = 8):
@@ -178,7 +215,7 @@ class PromptBuilder:
         prompt_parts.append(
             "smooth seamless loop from end back to beginning, "
             "keep background static, "
-            "preserve monochrome photograph character"
+            "preserve original photograph character and quality"
         )
 
         # Add audio if requested
@@ -201,11 +238,11 @@ class PromptBuilder:
             Introductory prompt text
         """
         intros = {
-            PhotoType.PORTRAIT: "Animate this as a living black and white wizarding portrait photograph",
-            PhotoType.GROUP: "Animate this as a living black and white wizarding group photograph with subjects interacting",
-            PhotoType.LANDSCAPE: "Transform this into a living monochrome magical scene",
-            PhotoType.PET: "Bring this to life as a black and white magical creature portrait",
-            PhotoType.FORMAL: "Animate as a distinguished black and white wizarding portrait",
+            PhotoType.PORTRAIT: "Animate this as a living wizarding portrait photograph",
+            PhotoType.GROUP: "Animate this as a living wizarding group photograph with subjects interacting",
+            PhotoType.LANDSCAPE: "Transform this into a living magical scene",
+            PhotoType.PET: "Bring this to life as a magical creature portrait",
+            PhotoType.FORMAL: "Animate as a distinguished wizarding portrait",
         }
         return intros.get(photo_type, intros[PhotoType.PORTRAIT])
 
@@ -225,10 +262,19 @@ class PromptBuilder:
         # Get base movements based on intensity
         if intensity == AnimationIntensity.SUBTLE:
             movements = self.SUBTLE_MOVEMENTS[:3]  # Use first 3 subtle movements
+            # Add subtle viewer interactions and emotions
+            movements.extend(self.VIEWER_INTERACTIONS[:2])
+            movements.extend(self.EMOTIONAL_EXPRESSIONS[:2])
         elif intensity == AnimationIntensity.MODERATE:
-            movements = self.MODERATE_MOVEMENTS[:4]  # Use first 4 moderate movements
+            movements = self.MODERATE_MOVEMENTS[:3]  # Use first 3 moderate movements
+            # Add moderate viewer interactions and emotions
+            movements.extend(self.VIEWER_INTERACTIONS[2:5])
+            movements.extend(self.EMOTIONAL_EXPRESSIONS[2:5])
         else:  # DRAMATIC
-            movements = self.DRAMATIC_MOVEMENTS[:5]  # Use first 5 dramatic movements
+            movements = self.DRAMATIC_MOVEMENTS[:4]  # Use first 4 dramatic movements
+            # Add dramatic viewer interactions and emotions
+            movements.extend(self.VIEWER_INTERACTIONS[5:8])
+            movements.extend(self.EMOTIONAL_EXPRESSIONS[5:8])
 
         # Add group interactions if it's a group photo
         if photo_type == PhotoType.GROUP:
