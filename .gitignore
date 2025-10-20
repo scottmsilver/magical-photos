@@ -1,0 +1,86 @@
+# Environment & API Keys
+.env
+.env.local
+.venv/
+venv/
+env/
+ENV/
+*.key
+*_key.txt
+credentials.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Output files
+output/
+*.mp4
+*.mov
+*.avi
+*.webm
+
+# Personal photos (exclude source images)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+# But keep example images
+!examples/sample_*.jpg
+!docs/images/*.png
+
+# Rate limiting & state
+.google_api_rate_limit
+.rate_limit_state
+*.state
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*_bw.jpg
+*_fitted_*.jpg
+*_preprocessed.jpg

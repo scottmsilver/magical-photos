@@ -1,0 +1,13 @@
+# Core dependencies for Harry Potter Photo Frame project
+google-genai>=0.4.0
+pillow>=10.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Stable Video Diffusion (Local GPU fallback)
+diffusers>=0.30.0
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.35.0
+accelerate>=0.25.0
+imageio[ffmpeg]>=2.31.0
